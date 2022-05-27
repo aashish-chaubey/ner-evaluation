@@ -1,0 +1,4 @@
+nltk
+PyMuPDF
+python-docx
+transformers
