@@ -1,3 +1,12 @@
+.tmp
+Thumbs.db
+__pycache__
+.vscode
+*.pt
+report.docx
+.~*
+stanford-ner
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
