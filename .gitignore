@@ -3,7 +3,7 @@ Thumbs.db
 __pycache__
 .vscode
 *.pt
-report.docx
+assets/report.docx
 .~*
 stanford-ner
 
