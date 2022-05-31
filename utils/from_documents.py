@@ -1,10 +1,16 @@
+import sys
 import docx
 import fitz
+import logging
 from clean import clean_text
 from pathlib import Path
 
 class Document:
-    def __init__(self, file_path: Path) -> None:
+    """
+    Extract, preprocess and returns the extracted text back with `text` attribute
+    """
+    def __init__(self, file_path: Path, log_path: Path) -> None:
+        self.logger = self.__create_logger(log_path)
         self.file_path = file_path
         self.file_type = self.__get_file_type()
         self.text = ''
@@ -14,6 +20,14 @@ class Document:
             self.__from_docx()
         elif self.file_type == '.txt':
             self.__from_txt()
+
+    def __create_logger(self, log_path) -> logging.Logger:
+        logger       = logging.getLogger(__name__)
+        file_handler = logging.FileHandler(f'{log_path}/{__class__.__name__}.log')
+        formatter    = logging.Formatter('%(asctime)s :: %(funcName)s :: %(levelname)s :: %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        return logger
 
     def __get_file_type(self) -> str:
         """
@@ -28,13 +42,22 @@ class Document:
             `Input`: Input path of the DOCX file
             `Output`: Extracted and processed text
         """
-        doc = docx.Document(self.file_path)
-        text = []
-        for para in doc.paragraphs:
-            text.append(para.text)
-        text = '\n'.join(text)
-        text = clean_text(text)
-        self.text = text
+        try:
+            doc = docx.Document(self.file_path)
+        except FileNotFoundError:
+            self.logger.exception(f'There is no file - `{self.file_path.name}` at location - `{self.file_path.parent}`')
+            self.__no_such_file_error()
+        except Exception as ex:
+            self.logger.exception(ex)
+            self.__no_such_file_error()
+        else:
+            text = []
+            for para in doc.paragraphs:
+                text.append(para.text)
+            text = '\n'.join(text)
+            text = clean_text(text, self.logger)
+            self.text = text
+        self.logger.debug(f"Successfully extracted text from `{self.file_path.name}`")
 
     def __from_pdf(self) -> None:
         """
@@ -42,13 +65,22 @@ class Document:
             `Input`: Input path of the PDF file
             `Output`: Extracted and processed text
         """
-        doc = fitz.open(self.file_path)
-        text = []
-        for page in doc:
-            text.append(page.get_text())
-        text = '\n\n'.join(text)
-        text = clean_text(text)
-        self.text = text
+        try:
+            doc = fitz.open(self.file_path)
+        except FileNotFoundError:
+            self.logger.exception(f'There is no file - `{self.file_path.name}` at location - `{self.file_path.parent}`')
+            self.__no_such_file_error()
+        except Exception as ex:
+            self.logger.exception(ex)
+            self.__no_such_file_error()
+        else:
+            text = []
+            for page in doc:
+                text.append(page.get_text())
+            text = '\n\n'.join(text)
+            text = clean_text(text, self.logger)
+            self.text = text
+        self.logger.debug(f"Successfully extracted text from `{self.file_path.name}`")
 
     def __from_txt(self) -> None:
         """
@@ -56,7 +88,24 @@ class Document:
             `Input`: Input path of the TXT file
             `Output`: Extracted and processed text
         """
-        with open(self.file_path, 'r') as file:
+        try:
+            file = open(self.file_path, 'r')
+        except FileNotFoundError:
+            self.logger.exception(f'There is no file - `{self.file_path.name}` at location - `{self.file_path.parent}`')
+            self.__no_such_file_error()
+        except Exception as ex:
+            self.logger.exception(ex)
+            self.__no_such_file_error()
+        else:
             text = file.read()
-            text = clean_text(text)
-        self.text = text
+            text = clean_text(text, self.logger)
+            self.text = text
+        finally:
+            file.close()
+        self.logger.debug(f"Successfully extracted text from `{self.file_path.name}`")
+
+    def __no_such_file_error(self):
+        """
+        Handler code if file is not found at the provided location
+        """
+        sys.exit("File not found")

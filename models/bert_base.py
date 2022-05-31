@@ -1,3 +1,6 @@
+import sys
+import logging
+
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
 
@@ -5,16 +8,36 @@ class NERModel:
     """
     Using Transformer based BERT model for NER
     """
-    def __init__(self, text) -> None:
+    def __init__(self, text, log_path) -> None:
         self.text = text
+        self.logger = self.__create_logger(log_path)
         self.entities_per_loc = self.__get_entities()
+        self.logger.info("Using BERT base pretrained NER model")
+
+    def __create_logger(self, log_path) -> logging.Logger:
+        """
+        Create a Logger
+        """
+        logger       = logging.getLogger(__name__)
+        file_handler = logging.FileHandler(f'{log_path}/{__class__.__name__}.log')
+        formatter    = logging.Formatter('%(asctime)s :: %(funcName)s :: %(levelname)s :: %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        return logger
     
     def __extract_entities(self) -> dict:
-        tokenizer = AutoTokenizer.from_pretrained("dslim/bert-large-NER")
-        model = AutoModelForTokenClassification.from_pretrained("dslim/bert-base-NER")
-        nlp = pipeline("ner", model=model, tokenizer=tokenizer)
-        ner_results = nlp(self.text)
-        return ner_results
+        try:
+            tokenizer = AutoTokenizer.from_pretrained("dslim/bert-large-NER")
+            model = AutoModelForTokenClassification.from_pretrained("dslim/bert-base-NER")
+        except Exception as excp:
+            self.logger.critical("Right HTTP path to the pretrained tokenizer is not provided")
+            self.logger.exception(excp)
+            self.__no_such_pretained_item()
+        else:
+            nlp = pipeline("ner", model=model, tokenizer=tokenizer)
+            ner_results = nlp(self.text)
+            self.logger.debug("Extracted relevant entities from the text")
+            return ner_results
     
     def __get_entities(self) -> dict:
         this_name = []
@@ -59,3 +82,9 @@ class NERModel:
             'person': final_name_list,
             'location': final_loc_list
         }
+
+    def __no_such_pretained_item(self):
+        """
+        Handler code if file is not found at the provided location
+        """
+        sys.exit("URL not found")

@@ -2,3 +2,4 @@ nltk
 PyMuPDF
 python-docx
 transformers
+configparser
