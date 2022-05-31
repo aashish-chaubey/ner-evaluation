@@ -20,6 +20,9 @@ class Document:
             self.__from_docx()
         elif self.file_type == '.txt':
             self.__from_txt()
+        else:
+            self.logger.error("Input file not of the expected file format...")
+            self.__no_such_file_error()
 
     def __create_logger(self, log_path) -> logging.Logger:
         logger       = logging.getLogger(__name__)

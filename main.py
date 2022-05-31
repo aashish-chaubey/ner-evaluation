@@ -17,7 +17,8 @@ def init():
     # Create a parser and parse command line arguments
     ##
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input",dest = "input_file", help="Input file path")
+    requiredNamed = parser.add_argument_group('Input Requirement')
+    requiredNamed.add_argument("-i", "--input",dest = "input_file", help="Input file path", required=True)
     args = parser.parse_args()
 
     ##
